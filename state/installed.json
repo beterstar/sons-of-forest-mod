@@ -3,7 +3,7 @@
     "items":  {
                   "sniper":  {
                                  "backup":  null,
-                                 "sha256":  "73ead88fd171f954cd9f747a318a84eb1736f249fc4b680c0b3595b837efdbd8",
+                                 "sha256":  "fbf9fd855504e0e8d291d06b2c4f0b92e382d3d89fb1c3883c0590878115aabf",
                                  "name":  "ปืนสไนเปอร์ไม้ (คราฟจากกิ่งไม้ 10 + หินเล็ก 10)",
                                  "files":  [
                                                "Mods\\SniperRifle.dll",
@@ -11,7 +11,7 @@
                                                "Mods\\SniperRifle\\manifest.json",
                                                "Mods\\SniperRifle\\README-TH.txt"
                                            ],
-                                 "installedAt":  "2026-10-14T12:53:47"
+                                 "installedAt":  "2026-10-14T17:54:19"
                              },
                   "carry":  {
                                 "backup":  null,

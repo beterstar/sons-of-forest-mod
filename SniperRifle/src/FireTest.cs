@@ -22,13 +22,15 @@ namespace SniperRifle
     /// </summary>
     internal sealed class FireTest
     {
-        private enum Kind { Combo, Accuracy, Harvest, Stash }
+        private enum Kind { Combo, Accuracy, Harvest, Stash, Cave, Note, Switch }
 
         // name, kind, aim correction (-1 config / 0 off / 1 on), equip the sniper first
         private static readonly (string name, Kind kind, int fix, bool equip)[] Phases =
         {
-            ("rabbit: hold E on the corpse", Kind.Harvest, -1, true),
-            ("after the rabbit: aim + fire", Kind.Combo, -1, false),
+            ("VANILLA pistol only: take it out, put it away", Kind.Switch, -1, true),
+            ("switch sniper -> pistol, then put the pistol away", Kind.Switch, -1, true),
+            ("pick up a note holding the sniper (game pickup code)", Kind.Note, -1, true),
+            ("sniper out again: aim + fire", Kind.Combo, -1, true),
         };
 
         private readonly string _dir;
@@ -44,6 +46,11 @@ namespace SniperRifle
         private Sons.Ai.Vail.VailActor _rabbit;
         private string _stashAwayState = "";
         private int _moved;
+        private Sons.Animation.PlayerControl.CaveEntranceCutscene _cave;
+        private Vector3 _caveStartPos;
+        private GameObject _note;
+        private readonly System.Collections.Generic.HashSet<IntPtr> _usedCaves = new System.Collections.Generic.HashSet<IntPtr>();
+        private bool _caveWasEmpty;
         private int _meatId = -1, _meatBefore;
 
         // bullet tracking (accuracy phases)
@@ -128,7 +135,7 @@ namespace SniperRifle
             var c = Controller();
             string common = $"item={inv.RightHandItem?._itemID} prev={inv.PreviousRightHandItem?._itemID} animId={(an != null ? an.GetInteger(Animator.StringToHash("RightHandHeldItemId")) : -1)} " +
                             $"equip={inv._currentEquipState} empty={inv.IsRightHandEmpty()} blockInv={inv.BlockTogglingInventory} blockRanged={inv.blockRangedAttack} " +
-                            $"rifleHeld={(an != null && an.GetBool(RifleHeldHash))} pitch={CamPitchDown():0.0} scoped={Scope.IsScoped} drawnFov={Scope.LastRenderedFov:0.0}";
+                            $"rifleHeld={(an != null && an.GetBool(RifleHeldHash))} handsEmpty={Sons.Cutscenes.Cutscene.IsPlayerHandsEmpty()} pitch={CamPitchDown():0.0} scoped={Scope.IsScoped} drawnFov={Scope.LastRenderedFov:0.0}";
             if (rw == null) return common;
             return common + $" ammo={rw._ammo?._currentCount} aiming={Sons.Input.InputSystem.IsRangedWeaponAiming} w={Sons.Input.InputSystem.RangedWeaponAimingWeight:0.00} " +
                    $"canAim={c?.CanAim()} idle={c?.IsItemIdle()} reloading={c?.IsReloading()} fireDown={_fireDownTrue} focus={Application.isFocused}";
@@ -311,6 +318,8 @@ namespace SniperRifle
                     inv.AddItem(SniperItem.Id, 1, true, false, null);
                     inv.AddItem(SniperItem.PistolAmmoId, 40, true, false, null);
                     inv.AddItem(SniperItem.PistolId, 1, true, false, null);
+                    inv.AddItem(SniperItem.RifleId, 1, true, false, null);
+                    inv.AddItem(387, 20, true, false, null);
                     FindItems();
                     _phase = 0;
                     Wait(1f, 1);
@@ -322,7 +331,8 @@ namespace SniperRifle
                     if (ph.equip)
                     {
                         inv.UnequipItemAtSlot(Sons.Items.Core.EquipmentSlot.RightHand, false, true, false, true, false, false);
-                        Log($"  equip sniper: {inv.TryEquip(SniperItem.Id, false, false, false)}");
+                        int equipId = ph.name.StartsWith("VANILLA pistol") ? SniperItem.PistolId : ph.name.StartsWith("VANILLA") ? SniperItem.RifleId : SniperItem.Id;
+                        Log($"  equip {equipId}: {inv.TryEquip(equipId, false, false, false)}");
                         Wait(9f, 2);
                     }
                     else Wait(0.5f, 2);
@@ -342,6 +352,9 @@ namespace SniperRifle
                         return;
                     }
                     if (ph.kind == Kind.Harvest) { Look(45f); Wait(1.0f, 10); return; }
+                    if (ph.kind == Kind.Cave) { Wait(0.5f, 30); return; }
+                    if (ph.kind == Kind.Note) { Look(35f); Wait(1.0f, 50); return; }
+                    if (ph.kind == Kind.Switch) { Ready("skip"); Wait(0.5f, 60); return; }
                     if (ph.kind == Kind.Stash)
                     {
                         Ready("skip");
@@ -413,6 +426,161 @@ namespace SniperRifle
                     NextPhase();
                     return;
                 }
+
+                // ---- sniper -> pistol -> empty hands
+                case 60:
+                    Log("  holding the sniper: " + State());
+                    Log($"  switch to pistol: {inv.TryEquip(SniperItem.PistolId, false, false, false)}");
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.5f, 61);
+                    return;
+                case 61:
+                    Log("  pistol: " + State());
+                    if (Time.unscaledTime - _waitStart < 4f) { Wait(0.5f, 61); return; }
+                    _stashAwayState = State();
+                    inv.StashRightHandItem(false, true, false);
+                    Log("  put the pistol away");
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.5f, 62);
+                    return;
+                case 62:
+                    Log("  empty: " + State());
+                    if (Time.unscaledTime - _waitStart < 6f) { Wait(0.5f, 62); return; }
+                    Log("  PLAYER animator, hands empty: " + AnimatorParams(LocalPlayer.Animator) + " " + Layers(LocalPlayer.Animator));
+                    Log($"SWITCH-AWAY RESULT: with the pistol [{_stashAwayState}] | hands now: item={inv.RightHandItem?._itemID} animId={LocalPlayer.Animator.GetInteger(Animator.StringToHash("RightHandHeldItemId"))} rifleHeld={LocalPlayer.Animator.GetBool(RifleHeldHash)} handsEmpty={Sons.Cutscenes.Cutscene.IsPlayerHandsEmpty()}");
+                    NextPhase();
+                    return;
+
+                // ---- pick up a note
+                case 50:
+                {
+                    int noteId = -1; string noteName = "";
+                    var items = Sons.Items.Core.ItemDatabaseManager.Items;
+                    for (int i = 0; i < items.Count && noteId < 0; i++)
+                    {
+                        var it = items[i];
+                        if (it != null && (it._name ?? "").IndexOf("Email", StringComparison.OrdinalIgnoreCase) >= 0 && SonsSdk.ItemTools.GetPickupPrefab(it._id) != null) { noteId = it._id; noteName = it._name; }
+                    }
+                    if (noteId < 0) { Skip("no email item with a pickup prefab"); return; }
+                    if (!RayFromCamera(10f, out var h)) { Skip("no ground in front"); return; }
+                    var prefab = SonsSdk.ItemTools.GetPickupPrefab(noteId);
+                    var go = UnityEngine.Object.Instantiate(prefab.gameObject, h.point + Vector3.up * 0.1f, Quaternion.identity);
+                    go.SetActive(true);
+                    _note = go;
+                    Log($"  spawned note pickup {noteId}:{noteName} ({go.name}) at {V(go.transform.position)} {h.distance:0.0} m away");
+                    Wait(1.5f, 51);
+                    return;
+                }
+                case 51:
+                {
+                    var cam = LocalPlayer.MainCamTr;
+                    Vector3 d = _note.transform.position - cam.position;
+                    float pitch = Mathf.Atan2(-d.y, new Vector2(d.x, d.z).magnitude) * Mathf.Rad2Deg;
+                    float yaw = Vector3.SignedAngle(Vector3.ProjectOnPlane(cam.forward, Vector3.up), Vector3.ProjectOnPlane(d, Vector3.up), Vector3.up);
+                    Look(pitch, yaw);
+                    var gui = _note.transform.Find("_PickupGui_");
+                    Log($"  note at {V(_note.transform.position)} dist {d.magnitude:0.0} m, looking at it; prompt={(gui != null ? gui.gameObject.activeInHierarchy.ToString() : "n/a")}; " + State());
+                    Wait(1.0f, 52);
+                    return;
+                }
+                case 52:
+                {
+                    Ready("skip");
+                    var pick = _note.GetComponentInChildren(Il2CppType.Of<Sons.Gameplay.PickUp>(), true)?.TryCast<Sons.Gameplay.PickUp>();
+                    if (pick == null) { Log("  note has no PickUp component"); }
+                    else { pick.Collect(); Log("  PickUp.Collect() called"); }
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.25f, 53);
+                    return;
+                }
+                case 53:
+                {
+                    var ri = LocalPlayer.Inventory.RightHandItem;
+                    Log($"  note: held={ri?._itemID} noteObj={(_note != null ? _note.activeInHierarchy.ToString() : "gone")} " + State() + " " + Layers(LocalPlayer.Animator));
+                    bool waiting = !InputDone || Time.unscaledTime - _waitStart < 10f;
+                    if (waiting && Time.unscaledTime - _waitStart < 45f) { Wait(0.25f, 53); return; }
+                    Log($"NOTE RESULT: right hand={LocalPlayer.Inventory.RightHandItem?._itemID} handsEmpty={Sons.Cutscenes.Cutscene.IsPlayerHandsEmpty()} " + State());
+                    Log("  PLAYER animator after note: " + AnimatorParams(LocalPlayer.Animator));
+                    ScreenCapture.CaptureScreenshot(Path.Combine(_dir, $"note_{_phase}.png"));
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.5f, 54);
+                    return;
+                }
+                case 54:
+                    Log("  after note: " + State());
+                    if (Time.unscaledTime - _waitStart < 5f) { Wait(0.5f, 54); return; }
+                    NextPhase();
+                    return;
+
+                // ---- cave entrance cutscene
+                case 30:
+                {
+                    _cave = null;
+                    var all = Resources.FindObjectsOfTypeAll(Il2CppType.Of<Sons.Animation.PlayerControl.CaveEntranceCutscene>());
+                    var me = LocalPlayer.Transform.position;
+                    float best = float.MaxValue;
+                    var sb = new StringBuilder($"  cave entrance cutscenes: {all.Length}:");
+                    for (int i = 0; i < all.Length; i++)
+                    {
+                        var c = all[i].TryCast<Sons.Animation.PlayerControl.CaveEntranceCutscene>();
+                        if (c == null || !c.gameObject.scene.IsValid()) continue;
+                        float d = Vector3.Distance(me, c.transform.position);
+                        bool enabled = false, open = false;
+                        try { enabled = c.CaveEntranceEnabled(); open = c.CaveIsOpen(); } catch { }
+                        if (i < 12) sb.Append($" [{c.name} dir={c._direction} d={d:0} active={c.gameObject.activeInHierarchy} enabled={enabled} open={open}]");
+                        if (c._direction.ToString().IndexOf("Exit", StringComparison.OrdinalIgnoreCase) >= 0 || c._isDemonBossCaveExit) continue;
+                        if (_usedCaves.Contains(c.Pointer)) continue;
+                        if (d < best) { best = d; _cave = c; }
+                    }
+                    Log(sb.ToString());
+                    if (_cave == null) { Skip("no unused cave entrance found"); return; }
+                    _usedCaves.Add(_cave.Pointer);
+                    var at = _cave._alignmentTransform != null ? _cave._alignmentTransform : _cave.transform;
+                    Log($"  using {_cave.name} dir={_cave._direction} at {V(at.position)} ({best:0} m away); hands empty now: {Sons.Cutscenes.Cutscene.IsPlayerHandsEmpty()}");
+                    Vector3 to = at.position - at.forward * 1.5f + Vector3.up * 0.5f;
+                    LocalPlayer.Transform.position = to;
+                    if (LocalPlayer.Rigidbody != null) LocalPlayer.Rigidbody.position = to;
+                    Log($"  teleported to {V(to)}");
+                    Wait(8f, 35);
+                    return;
+                }
+                case 35:
+                    Ready("skip");
+                    Wait(2.5f, 31);
+                    return;
+                case 31:
+                {
+                    Log("  at the cave: " + State() + $" inCaves={LocalPlayer.IsInCaves} canPlay={_cave.CanBePlayed()} enabled={_cave.CaveEntranceEnabled()} pos={V(LocalPlayer.Transform.position)}");
+                    _caveStartPos = LocalPlayer.Transform.position;
+                    _caveWasEmpty = false;
+                    Log($"  Play() -> {_cave.Play()}");
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.25f, 32);
+                    return;
+                }
+                case 32:
+                {
+                    bool empty = Sons.Cutscenes.Cutscene.IsPlayerHandsEmpty();
+                    _caveWasEmpty |= empty;
+                    Log($"  cave: handsEmpty={empty} playing={_cave._isPlayingLocally} locked={LocalPlayer.FpCharacter?.Locked}/{LocalPlayer.FpCharacter?.MovementLocked} inCaves={LocalPlayer.IsInCaves} moved={Vector3.Distance(_caveStartPos, LocalPlayer.Transform.position):0.0} " + State());
+                    if (Time.unscaledTime - _waitStart < 30f && !(LocalPlayer.IsInCaves && !_cave._isPlayingLocally && Time.unscaledTime - _waitStart > 3f)) { Wait(0.25f, 32); return; }
+                    Log($"CAVE RESULT: inCaves={LocalPlayer.IsInCaves} handsEverEmpty={_caveWasEmpty} stillPlaying={_cave._isPlayingLocally} rightHand={LocalPlayer.Inventory.RightHandItem?._itemID}");
+                    Log("  PLAYER animator after cave: " + AnimatorParams(LocalPlayer.Animator));
+                    ScreenCapture.CaptureScreenshot(Path.Combine(_dir, $"cave_{_phase}.png"));
+                    _waitStart = Time.unscaledTime;
+                    Wait(4f, 33);
+                    return;
+                }
+                case 33:
+                    Log("  4 s later: " + State());
+                    if (LocalPlayer.Inventory.RightHandItem == null && LocalPlayer.Inventory.PreviousRightHandItem != null)
+                        Log($"  take the gun out again: {LocalPlayer.Inventory.TryEquip(Phases[_phase].name.StartsWith("VANILLA") ? SniperItem.RifleId : SniperItem.Id, false, false, false)}");
+                    Wait(4f, 34);
+                    return;
+                case 34:
+                    Log("  after re-equip: " + State());
+                    NextPhase();
+                    return;
 
                 // ---- put away / take out with the game's own code
                 case 20:
