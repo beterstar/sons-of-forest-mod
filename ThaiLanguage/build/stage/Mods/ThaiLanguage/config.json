@@ -1,0 +1,36 @@
+// ตั้งค่า mod ภาษาไทย (แก้แล้วเปิดเกมใหม่)
+{
+  // false = ปิด mod นี้ชั่วคราว (เกมกลับเป็นภาษาอังกฤษ)
+  "enabled": true,
+
+  // ฟอนต์ไทยที่จะใช้ เลือกไฟล์แรกที่มีอยู่จริง
+  // อยากใช้ฟอนต์อื่น (เช่น Sarabun, Kanit) ให้วางไฟล์ชื่อ font.ttf ไว้ในโฟลเดอร์ Mods\ThaiLanguage
+  "fonts": [
+    "{mod}/font.ttf",
+    "{mod}/font.otf",
+    "{windows}/Fonts/LeelawUI.ttf",
+    "{windows}/Fonts/leelawad.ttf",
+    "{windows}/Fonts/tahoma.ttf"
+  ],
+
+  // ขนาดตัวอักษรไทยเทียบกับปกติ (1.0 = ปกติ, 1.1 = ใหญ่ขึ้น 10%)
+  "fontScale": 1.0,
+
+  // ตัดคำไทยให้ขึ้นบรรทัดใหม่ถูกตำแหน่ง (ใช้ตัวตัดคำของ Windows)
+  "wordBreak": true,
+
+  // จัดตำแหน่งสระบน/ล่าง และวรรณยุกต์ให้ถูกต้อง
+  "markPositioning": true,
+
+  // แปลข้อความบนหน้าจอที่เกมไม่ได้ส่งผ่านระบบแปลภาษา (ถ้าตรงกับข้อความที่รู้จัก)
+  "translateStaticTexts": true,
+
+  // เปลี่ยนชื่อภาษา English ในเมนูเป็น "ภาษาไทย"
+  "renameEnglishLocale": true,
+
+  // เขียนไฟล์ missing.txt / untranslated.txt ไว้ดูว่ายังเหลือข้อความไหนไม่ได้แปล
+  "writeReports": true,
+
+  // สำหรับทดสอบ: แสดงข้อความตัวอย่างและถ่ายภาพหน้าจอหน้าแรกไว้ที่ debug\title.png
+  "debug": false
+}

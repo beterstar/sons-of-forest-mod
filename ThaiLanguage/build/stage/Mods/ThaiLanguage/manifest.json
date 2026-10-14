@@ -1,0 +1,11 @@
+{
+    "$schema":  "https://raw.githubusercontent.com/ToniMacaroni/RedLoader/main/MetadataSchema.json",
+    "id":  "ThaiLanguage",
+    "name":  "Thai Language",
+    "author":  "Claude (local build)",
+    "version":  "1.0.0",
+    "description":  "แปลเกม Sons Of The Forest เป็นภาษาไทย + ฟอนต์ไทย จัดวรรณยุกต์ และตัดคำ",
+    "gameVersion":  "1.0.0",
+    "type":  "Mod",
+    "url":  ""
+}

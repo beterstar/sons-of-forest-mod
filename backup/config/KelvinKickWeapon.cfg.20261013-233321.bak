@@ -1,0 +1,12 @@
+[KelvinKickWeapon]
+# How much damage Kelvin's Kick does.
+# Range: 0 - 10000
+Kickdamage = 10
+# How fast kelvin swings his kicks.
+# Range: 1 - 200
+Kickswingspeed = 20
+# How much max health does kelvin have?(Recommended at least 1000 for this mod)
+# Range: 1 - 30000
+Maxhealth = 100
+dontusekick = false
+
