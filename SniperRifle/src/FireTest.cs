@@ -22,16 +22,15 @@ namespace SniperRifle
     /// </summary>
     internal sealed class FireTest
     {
-        private enum Kind { Combo, Accuracy, Harvest, Stash, Cave, Note, Switch }
+        private enum Kind { Combo, Accuracy, Harvest, Stash, Cave, Note, Switch, Pickup, Eat, Inv, Key }
 
         // name, kind, aim correction (-1 config / 0 off / 1 on), equip the sniper first
         private static readonly (string name, Kind kind, int fix, bool equip)[] Phases =
         {
-            ("VANILLA pistol only: take it out, put it away", Kind.Switch, -1, true),
-            ("switch sniper -> pistol, then put the pistol away", Kind.Switch, -1, true),
-            ("pick up a note holding the sniper (game pickup code)", Kind.Note, -1, true),
-            ("sniper out again: aim + fire", Kind.Combo, -1, true),
-        };
+            ("sniper: crawl into a cave while AIMING (gets stuck)", Kind.Cave, -1, true),
+            ("press the unstuck key (F8)", Kind.Key, -1, false),
+            ("pickup:393 big rock", Kind.Pickup, -1, true),
+            ("finally: aim + fire", Kind.Combo, -1, true),        };
 
         private readonly string _dir;
         private readonly StringBuilder _log = new StringBuilder();
@@ -49,6 +48,7 @@ namespace SniperRifle
         private Sons.Animation.PlayerControl.CaveEntranceCutscene _cave;
         private Vector3 _caveStartPos;
         private GameObject _note;
+        private int _pickId, _pickBefore;
         private readonly System.Collections.Generic.HashSet<IntPtr> _usedCaves = new System.Collections.Generic.HashSet<IntPtr>();
         private bool _caveWasEmpty;
         private int _meatId = -1, _meatBefore;
@@ -135,7 +135,7 @@ namespace SniperRifle
             var c = Controller();
             string common = $"item={inv.RightHandItem?._itemID} prev={inv.PreviousRightHandItem?._itemID} animId={(an != null ? an.GetInteger(Animator.StringToHash("RightHandHeldItemId")) : -1)} " +
                             $"equip={inv._currentEquipState} empty={inv.IsRightHandEmpty()} blockInv={inv.BlockTogglingInventory} blockRanged={inv.blockRangedAttack} " +
-                            $"rifleHeld={(an != null && an.GetBool(RifleHeldHash))} handsEmpty={Sons.Cutscenes.Cutscene.IsPlayerHandsEmpty()} pitch={CamPitchDown():0.0} scoped={Scope.IsScoped} drawnFov={Scope.LastRenderedFov:0.0}";
+                            $"rifleHeld={(an != null && an.GetBool(RifleHeldHash))} locked={LocalPlayer.FpCharacter?.Locked}/{LocalPlayer.FpCharacter?.MovementLocked} handsEmpty={Sons.Cutscenes.Cutscene.IsPlayerHandsEmpty()} pitch={CamPitchDown():0.0} scoped={Scope.IsScoped} drawnFov={Scope.LastRenderedFov:0.0}";
             if (rw == null) return common;
             return common + $" ammo={rw._ammo?._currentCount} aiming={Sons.Input.InputSystem.IsRangedWeaponAiming} w={Sons.Input.InputSystem.RangedWeaponAimingWeight:0.00} " +
                    $"canAim={c?.CanAim()} idle={c?.IsItemIdle()} reloading={c?.IsReloading()} fireDown={_fireDownTrue} focus={Application.isFocused}";
@@ -315,6 +315,7 @@ namespace SniperRifle
                 case 0:
                     InstallObservers();
                     AnimFix.Observer = s => Log("  [anim] " + s);
+                    Unstuck.Observer = s => Log("  [unstuck] " + s);
                     inv.AddItem(SniperItem.Id, 1, true, false, null);
                     inv.AddItem(SniperItem.PistolAmmoId, 40, true, false, null);
                     inv.AddItem(SniperItem.PistolId, 1, true, false, null);
@@ -355,6 +356,10 @@ namespace SniperRifle
                     if (ph.kind == Kind.Cave) { Wait(0.5f, 30); return; }
                     if (ph.kind == Kind.Note) { Look(35f); Wait(1.0f, 50); return; }
                     if (ph.kind == Kind.Switch) { Ready("skip"); Wait(0.5f, 60); return; }
+                    if (ph.kind == Kind.Pickup) { Ready("skip"); Look(35f); Wait(1.0f, 70); return; }
+                    if (ph.kind == Kind.Eat) { Ready("skip"); Wait(0.5f, 80); return; }
+                    if (ph.kind == Kind.Inv) { Ready("skip"); Wait(0.5f, 85); return; }
+                    if (ph.kind == Kind.Key) { Log("  before the key: " + Unstuck.Snapshot()); Ready("f8"); Wait(0.25f, 90); return; }
                     if (ph.kind == Kind.Stash)
                     {
                         Ready("skip");
@@ -451,6 +456,118 @@ namespace SniperRifle
                     NextPhase();
                     return;
 
+                // ---- pick up an item from the ground the way E does (PickUp.Take)
+                case 70:
+                {
+                    _pickId = int.Parse(System.Text.RegularExpressions.Regex.Match(ph.name, @"pickup:(\d+)").Groups[1].Value);
+                    var prefab = SonsSdk.ItemTools.GetPickupPrefab(_pickId);
+                    if (prefab == null) { Skip($"item {_pickId} has no pickup prefab"); return; }
+                    if (!RayFromCamera(10f, out var h)) { Skip("no ground in front"); return; }
+                    _note = UnityEngine.Object.Instantiate(prefab.gameObject, h.point + Vector3.up * 0.15f, Quaternion.identity);
+                    _note.SetActive(true);
+                    _pickBefore = inv.AmountOf(_pickId, true, false);
+                    Log($"  spawned pickup for {_pickId} ({_note.name}) {h.distance:0.0} m away; have {_pickBefore}");
+                    Wait(1.5f, 71);
+                    return;
+                }
+                case 71:
+                {
+                    var cam = LocalPlayer.MainCamTr;
+                    Vector3 d = _note.transform.position - cam.position;
+                    Look(Mathf.Atan2(-d.y, new Vector2(d.x, d.z).magnitude) * Mathf.Rad2Deg,
+                         Vector3.SignedAngle(Vector3.ProjectOnPlane(cam.forward, Vector3.up), Vector3.ProjectOnPlane(d, Vector3.up), Vector3.up));
+                    var pick = _note.GetComponentInChildren(Il2CppType.Of<Sons.Gameplay.PickUp>(), true)?.TryCast<Sons.Gameplay.PickUp>();
+                    if (pick == null) { Skip("no PickUp component"); return; }
+                    Log($"  before take: fullBody={pick._needsFullBodyInteraction} blockedFullBody={pick.BlockedFullBodyInteraction()} canGather={pick.CanPlayerGather()} autoEquip={pick._forceAutoEquip}/{!pick._preventAutoEquip} " + State());
+                    pick.Take();
+                    Log("  PickUp.Take() called");
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.25f, 72);
+                    return;
+                }
+                case 72:
+                    Log("  taking: " + State() + " " + Layers(LocalPlayer.Animator));
+                    if (Time.unscaledTime - _waitStart < 6f) { Wait(0.25f, 72); return; }
+                    Log($"PICKUP RESULT {_pickId}: amount {_pickBefore} -> {inv.AmountOf(_pickId, true, false)}, hand={inv.RightHandItem?._itemID} " + State());
+                    Log("  PLAYER animator after pickup: " + AnimatorParams(LocalPlayer.Animator));
+                    ScreenCapture.CaptureScreenshot(Path.Combine(_dir, $"pickup_{_phase}.png"));
+                    Wait(0.1f, 73);
+                    return;
+                case 73:
+                    if (inv.RightHandItem?._itemID != SniperItem.Id)
+                        Log($"  take the sniper out: {inv.TryEquip(SniperItem.Id, false, false, false)}");
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.5f, 74);
+                    return;
+                case 74:
+                {
+                    Log("  sniper again: " + State());
+                    if (Time.unscaledTime - _waitStart < 4f) { Wait(0.5f, 74); return; }
+                    var c = Controller();
+                    bool ok = inv.RightHandItem?._itemID == SniperItem.Id && c != null && c.CanAim() && inv._currentEquipState.ToString() == "Idle"
+                              && !(LocalPlayer.FpCharacter?.Locked ?? false);
+                    Log($"AFTER {(ph.kind == Kind.Pickup ? "PICKUP " + _pickId : ph.name)}: {(ok ? "OK" : "STUCK")} " + State());
+                    NextPhase();
+                    return;
+                }
+
+                // ---- the outside script presses the unstuck key
+                case 90:
+                    if (!InputDone && Time.unscaledTime - _waitStart < 30f) { Wait(0.25f, 90); return; }
+                    Wait(1.5f, 91);
+                    return;
+                case 91:
+                    Log("  after the key: " + Unstuck.Snapshot());
+                    Wait(0.1f, 73);
+                    return;
+
+                // ---- eat something from the inventory while holding the sniper
+                case 80:
+                {
+                    int food = -1; string foodName = "";
+                    string[] wanted = { "EnergyBar", "MRE", "CatFood", "Meat" };
+                    foreach (var w in wanted)
+                    {
+                        int id = Sons.Items.Core.ItemDatabaseManager.ItemIdByName(w);
+                        if (id > 0) { food = id; foodName = w; break; }
+                    }
+                    if (food < 0) { Skip("no food item found"); return; }
+                    inv.AddItem(food, 2, true, false, null);
+                    var action = LocalPlayer._instance.GetComponentInChildren(Il2CppType.Of<TheForest.Player.Actions.PlayerConsumeItemAction>(), true)?.TryCast<TheForest.Player.Actions.PlayerConsumeItemAction>();
+                    var store = inv._itemInstanceManager;
+                    var all = store.GetAllItemsOfType(food);
+                    if (action == null || all == null || all.Count == 0) { Skip($"can't consume {foodName}: action={action != null} items={all?.Count}"); return; }
+                    Log($"  eat {food}:{foodName} while holding the sniper: " + State());
+                    action.ConsumeItem(all[0], true, null);
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.25f, 81);
+                    return;
+                }
+                case 81:
+                    Log("  eating: " + State());
+                    if (Time.unscaledTime - _waitStart < 6f) { Wait(0.25f, 81); return; }
+                    Log("  PLAYER animator after eating: " + AnimatorParams(LocalPlayer.Animator));
+                    Wait(0.1f, 73);
+                    return;
+
+                // ---- open and close the inventory while holding the sniper
+                case 85:
+                    Log("  open inventory: " + State());
+                    inv.Open();
+                    Wait(3f, 86);
+                    return;
+                case 86:
+                    Log("  inventory open: " + State());
+                    inv.Close(true);
+                    _waitStart = Time.unscaledTime;
+                    Wait(0.5f, 87);
+                    return;
+                case 87:
+                    Log("  inventory closed: " + State());
+                    if (Time.unscaledTime - _waitStart < 3f) { Wait(0.5f, 87); return; }
+                    Wait(0.1f, 73);
+                    return;
+
                 // ---- pick up a note
                 case 50:
                 {
@@ -545,7 +662,7 @@ namespace SniperRifle
                     return;
                 }
                 case 35:
-                    Ready("skip");
+                    Ready(ph.name.Contains("AIMING") ? "aimhold" : "skip");
                     Wait(2.5f, 31);
                     return;
                 case 31:
@@ -661,6 +778,7 @@ namespace SniperRifle
             if (_phase < Phases.Length) { Wait(2f, 1); return; }
             AimFix.ForceMode = -1;
             AnimFix.Observer = null;
+            Unstuck.Observer = null;
             Log("done");
         }
 

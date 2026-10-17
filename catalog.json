@@ -21,6 +21,7 @@
   "groups": [
     "ภาษา",
     "อาวุธ (สร้างในเครื่องนี้)",
+    "เครื่องมือ (สร้างในเครื่องนี้)",
     "ยก / เก็บของ",
     "Kelvin",
     "ผู้เล่น / โกง",
@@ -85,18 +86,42 @@
       "mp": false,
       "local": true,
       "name": "ปืนสไนเปอร์ไม้ (คราฟจากกิ่งไม้ 10 + หินเล็ก 10)",
-      "mod": "SniperRifle 1.0.5 (สร้างในเครื่องนี้ ไม่ต้องดาวน์โหลด)",
+      "mod": "SniperRifle 1.0.6 (สร้างในเครื่องนี้ ไม่ต้องดาวน์โหลด)",
       "page": "SniperRifle",
-      "desc": "ปืนสไนเปอร์คราฟเอง คลิกขวาส่องกล้องซูม ~6 เท่า ใช้กระสุน 9 มม. ดาเมจเท่าปืนพก แม็กละ 5 นัด + คราฟกระสุน 9 มม. จากก้อนหิน (1 ก้อน = 3 นัด) หรือใบไม้ (3 ใบ = 1 นัด)  ตั้งค่าได้ที่ Mods\\SniperRifle\\config.json",
+      "desc": "ปืนสไนเปอร์คราฟเอง คลิกขวาส่องกล้องซูม ~6 เท่า ใช้กระสุน 9 มม. ดาเมจเท่าปืนพก แม็กละ 5 นัด + คราฟกระสุน 9 มม. จากก้อนหิน (1 ก้อน = 20 นัด) หรือใบไม้ (3 ใบ = 20 นัด)  กด F8 ถ้าตัวละครค้าง  ตั้งค่าได้ที่ Mods\\SniperRifle\\config.json",
       "warn": "เล่นออนไลน์ทุกคนต้องติดตั้งด้วย / ถ้าถอน mod ปืนที่อยู่ในเซฟจะหายไป",
-      "file": "sniper-rifle-1.0.5.zip",
-      "sha256": "fbf9fd855504e0e8d291d06b2c4f0b92e382d3d89fb1c3883c0590878115aabf",
-      "size": 37863,
+      "file": "sniper-rifle-1.0.6.zip",
+      "sha256": "cdf88468c6aacb39246f9501c26a4009eb6206d18fc36fdf29a87d98aee459a2",
+      "size": 41620,
       "files": [
         "Mods/SniperRifle.dll",
         "Mods/SniperRifle/README-TH.txt",
         "Mods/SniperRifle/config.json",
         "Mods/SniperRifle/manifest.json"
+      ],
+      "roots": [
+        "Mods/"
+      ]
+    },
+    {
+      "id": "companion",
+      "group": "เครื่องมือ (สร้างในเครื่องนี้)",
+      "default": false,
+      "mp": false,
+      "local": true,
+      "name": "ชุบชีวิตเวอร์จิเนีย/เคลวิน (เซฟที่ตายไปแล้ว)",
+      "mod": "CompanionRevive 1.0.0 (สร้างในเครื่องนี้ ไม่ต้องดาวน์โหลด)",
+      "page": "CompanionRevive",
+      "desc": "ตอนโฮสต์โหลดเซฟที่เวอร์จิเนีย (หรือเคลวิน) ตายไปแล้ว จะพากลับมาอยู่ข้างตัวผู้เล่น แล้วเซฟเกมเพื่อบันทึก  เลือกเซฟ/คนที่จะชุบได้ที่ Mods\\CompanionRevive\\config.json",
+      "warn": "ใช้ได้เฉพาะคนที่เป็นโฮสต์/เล่นคนเดียว",
+      "file": "companion-revive-1.0.0.zip",
+      "sha256": "03324ef5092e25222ade7c4fea553dfc931e074e00f5297637ee7a0cbdc66545",
+      "size": 8402,
+      "files": [
+        "Mods/CompanionRevive.dll",
+        "Mods/CompanionRevive/README-TH.txt",
+        "Mods/CompanionRevive/config.json",
+        "Mods/CompanionRevive/manifest.json"
       ],
       "roots": [
         "Mods/"

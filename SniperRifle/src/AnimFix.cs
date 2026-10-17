@@ -90,6 +90,16 @@ namespace SniperRifle
             catch (Exception e) { SniperRifleMod.LogOnce("AnimFix", e); }
         }
 
+        /// <summary>Unstuck key: clear the rifle pose now, whatever is in the hand.</summary>
+        internal static void ForceClear(Animator animator)
+        {
+            _sniperVarsPending = false;
+            _settledSince = -1f;
+            var item = LocalPlayer.Inventory?.RightHandItem;
+            if (item == null) ClearRiflePose(animator);
+            else if (item._itemID != SniperItem.Id && item._itemID != SniperItem.RifleId) ClearSniperOnlyVars(animator, item._itemID);
+        }
+
         /// <summary>Hands empty: let the game clear the sniper's animator variables (needs its own id in place).</summary>
         private static void ClearRiflePose(Animator animator)
         {

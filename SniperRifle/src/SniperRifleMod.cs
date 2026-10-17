@@ -32,6 +32,7 @@ namespace SniperRifle
             Explorer.Dir = DataPath.Path;
             try { Cfg = Config.Load(Path.Combine(DataPath.Path, "config.json")); }
             catch (Exception e) { RLog.Error("[SniperRifle] config.json อ่านไม่ได้ ใช้ค่าเริ่มต้น: " + e.Message); }
+            Unstuck.Configure(Cfg);
         }
 
         protected override void OnSdkInitialized()
@@ -79,6 +80,7 @@ namespace SniperRifle
             }
 
             AnimFix.Apply();
+            Unstuck.Update();
             Scope.Update(Cfg);
             ScopeModel.Update(Cfg);
             _devTest?.Update(now);

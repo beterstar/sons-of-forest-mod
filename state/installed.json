@@ -1,9 +1,24 @@
 ﻿{
     "gamePath":  "E:\\SteamLibrary\\steamapps\\common\\Sons Of The Forest",
     "items":  {
+                  "caves":  {
+                                "backup":  null,
+                                "sha256":  "703723b61be5321bebdd94b856299d88d54619699b777b9756b6377dfc6e43c6",
+                                "name":  "สร้างฐานในถ้ำได้",
+                                "files":  [
+                                              "Mods\\AllowBuildInCaves.dll",
+                                              "Mods\\AllowBuildInCaves\\CaveANavMesh_Fixed.obj",
+                                              "Mods\\AllowBuildInCaves\\CaveBNavMesh_Fixed.obj",
+                                              "Mods\\AllowBuildInCaves\\CaveCNavMesh_Fixed.obj",
+                                              "Mods\\AllowBuildInCaves\\CaveDNavMesh_Fixed.obj",
+                                              "Mods\\AllowBuildInCaves\\manifest.json",
+                                              "Mods\\AllowBuildInCaves\\pop.mp3"
+                                          ],
+                                "installedAt":  "2026-10-15T15:59:43"
+                            },
                   "sniper":  {
                                  "backup":  null,
-                                 "sha256":  "fbf9fd855504e0e8d291d06b2c4f0b92e382d3d89fb1c3883c0590878115aabf",
+                                 "sha256":  "cdf88468c6aacb39246f9501c26a4009eb6206d18fc36fdf29a87d98aee459a2",
                                  "name":  "ปืนสไนเปอร์ไม้ (คราฟจากกิ่งไม้ 10 + หินเล็ก 10)",
                                  "files":  [
                                                "Mods\\SniperRifle.dll",
@@ -11,7 +26,7 @@
                                                "Mods\\SniperRifle\\manifest.json",
                                                "Mods\\SniperRifle\\README-TH.txt"
                                            ],
-                                 "installedAt":  "2026-10-14T17:54:19"
+                                 "installedAt":  "2026-10-17T11:36:12"
                              },
                   "carry":  {
                                 "backup":  null,
@@ -263,6 +278,18 @@
                                               ],
                                     "installedAt":  "2026-10-12T17:31:13"
                                 },
+                  "companion":  {
+                                    "backup":  null,
+                                    "sha256":  "03324ef5092e25222ade7c4fea553dfc931e074e00f5297637ee7a0cbdc66545",
+                                    "name":  "ชุบชีวิตเวอร์จิเนีย/เคลวิน (เซฟที่ตายไปแล้ว)",
+                                    "files":  [
+                                                  "Mods\\CompanionRevive.dll",
+                                                  "Mods\\CompanionRevive\\config.json",
+                                                  "Mods\\CompanionRevive\\manifest.json",
+                                                  "Mods\\CompanionRevive\\README-TH.txt"
+                                              ],
+                                    "installedAt":  "2026-10-17T11:51:07"
+                                },
                   "skipintro":  {
                                     "backup":  null,
                                     "sha256":  "2231545c67a0d1fc16a6e2b071acf21c8374e383ebd2010994808b8e09a0d411",
@@ -271,7 +298,7 @@
                                                   "Mods\\SkipIntroCutscene.dll",
                                                   "Mods\\SkipIntroCutscene\\manifest.json"
                                               ],
-                                    "installedAt":  "2026-10-13T23:33:21"
+                                    "installedAt":  "2026-10-17T12:02:17"
                                 },
                   "thai":  {
                                "backup":  null,

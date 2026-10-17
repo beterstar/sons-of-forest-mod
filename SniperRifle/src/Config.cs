@@ -23,6 +23,7 @@ namespace SniperRifle
         public Vector3 ScopeScale = new Vector3(1.25f, 1.25f, 1.8f); // ขยายกล้องบนตัวปืน (กว้าง, สูง, ยาว)
         public Vector3 Tint = new Vector3(0.80f, 0.62f, 0.42f);     // สีโทนไม้ของตัวปืน (1,1,1 = สีเดิม)
         public Vector3 InventoryOffset = new Vector3(-0.52f, 0f, 0f);
+        public string UnstuckKey = "F8";       // ปุ่มแก้ตัวละครค้างท่าถือปืน ("" = ปิด)
         public bool Debug = false;
 
         internal static Config Load(string path)
@@ -55,6 +56,7 @@ namespace SniperRifle
                     case "scopescale": cfg.ScopeScale = Vec(v, cfg.ScopeScale); break;
                     case "tint": cfg.Tint = Vec(v, cfg.Tint); break;
                     case "inventoryoffset": cfg.InventoryOffset = Vec(v, cfg.InventoryOffset); break;
+                    case "unstuckkey": cfg.UnstuckKey = v.ValueKind == JsonValueKind.String ? v.GetString() : ""; break;
                     case "debug": cfg.Debug = v.GetBoolean(); break;
                 }
             }

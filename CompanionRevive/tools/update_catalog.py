@@ -1,0 +1,52 @@
+"""Register/refresh the locally built CompanionRevive package in ..\\catalog.json (used by ModPicker)."""
+import json, sys, os, hashlib, zipfile, collections
+
+zip_path, version = sys.argv[1], sys.argv[2]
+root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+catalog_path = os.path.join(root, 'catalog.json')
+
+raw = open(catalog_path, 'rb').read()
+bom = raw.startswith(b'\xef\xbb\xbf')
+catalog = json.loads(raw.decode('utf-8-sig'), object_pairs_hook=collections.OrderedDict)
+
+GROUP = 'เครื่องมือ (สร้างในเครื่องนี้)'
+if GROUP not in catalog['groups']:
+    after = 'อาวุธ (สร้างในเครื่องนี้)'
+    idx = catalog['groups'].index(after) + 1 if after in catalog['groups'] else len(catalog['groups'])
+    catalog['groups'].insert(idx, GROUP)
+
+with zipfile.ZipFile(zip_path) as z:
+    files = sorted(n for n in z.namelist() if not n.endswith('/'))
+
+item = collections.OrderedDict([
+    ('id', 'companion'),
+    ('group', GROUP),
+    ('default', False),
+    ('mp', False),
+    ('local', True),
+    ('name', 'ชุบชีวิตเวอร์จิเนีย/เคลวิน (เซฟที่ตายไปแล้ว)'),
+    ('mod', f'CompanionRevive {version} (สร้างในเครื่องนี้ ไม่ต้องดาวน์โหลด)'),
+    ('page', 'CompanionRevive'),
+    ('desc', 'ตอนโฮสต์โหลดเซฟที่เวอร์จิเนีย (หรือเคลวิน) ตายไปแล้ว จะพากลับมาอยู่ข้างตัวผู้เล่น แล้วเซฟเกมเพื่อบันทึก  '
+             'เลือกเซฟ/คนที่จะชุบได้ที่ Mods\\CompanionRevive\\config.json'),
+    ('warn', 'ใช้ได้เฉพาะคนที่เป็นโฮสต์/เล่นคนเดียว'),
+    ('file', os.path.basename(zip_path)),
+    ('sha256', hashlib.sha256(open(zip_path, 'rb').read()).hexdigest()),
+    ('size', os.path.getsize(zip_path)),
+    ('files', files),
+    ('roots', ['Mods/']),
+])
+
+items = catalog['items']
+for i, it in enumerate(items):
+    if it.get('id') == 'companion':
+        items[i] = item
+        break
+else:
+    pos = next((i + 1 for i, it in enumerate(items) if it.get('id') == 'sniper'), len(items))
+    items.insert(pos, item)
+
+text = json.dumps(catalog, ensure_ascii=False, indent=2) + '\n'
+with open(catalog_path, 'wb') as f:
+    f.write((b'\xef\xbb\xbf' if bom else b'') + text.encode('utf-8'))
+print(f'catalog.json: companion -> {item["file"]} {item["sha256"][:12]} ({item["size"]} bytes, {len(files)} files)')
