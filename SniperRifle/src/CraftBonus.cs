@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using RedLoader;
 using Sons.Crafting;
+using Sons.Items.Core;
 using SonsSdk;
 using TheForest.Utils;
 
@@ -13,7 +15,8 @@ namespace SniperRifle
     /// gave 1 round, or 0 when crafting again quickly) and a recipe with 20 results crashed the game as soon
     /// as it was added. So our ammo recipes list one round (for the recipe display) and when one is crafted
     /// the configured amount goes straight into the inventory instead of onto the mat - as much as the player
-    /// can still carry. If they can't carry any more, the ingredients are given back.
+    /// can still carry. If they can't carry any more, the ingredients are given back. With "ammoLeafFillsAll"
+    /// the leaf recipe tops up every kind of ammo (anything a weapon in the game can load) instead.
     /// </summary>
     internal static class CraftBonus
     {
@@ -36,6 +39,11 @@ namespace SniperRifle
                 if (total <= 0) return true;
 
                 var inv = LocalPlayer.Inventory;
+                if (recipe.name == SniperItem.LeafAmmoRecipeName && cfg.AmmoLeafFillsAll)
+                {
+                    FillAll(inv, recipe);
+                    return false;
+                }
                 int have = inv.AmountOf(SniperItem.PistolAmmoId, true, false);
                 int max = inv.GetMaxAmountOf(SniperItem.PistolAmmoId);
                 int give = max > 0 ? Math.Min(total, Math.Max(0, max - have)) : total;
@@ -56,6 +64,49 @@ namespace SniperRifle
                 SniperRifleMod.LogOnce("CraftBonus", e);
                 return true; // let the game do its normal thing
             }
+        }
+
+        /// <summary>Every ammo item some weapon in the game can use (rifle, pistol, shotgun, arrows, bolts, ...).</summary>
+        internal static int[] AllAmmoIds()
+        {
+            if (_allAmmo != null) return _allAmmo;
+            var ids = new SortedSet<int>();
+            var items = ItemDatabaseManager.Items;
+            for (int i = 0; items != null && i < items.Count; i++)
+            {
+                var ammo = items[i]?._compatibleAmmo;
+                for (int j = 0; ammo != null && j < ammo.Count; j++)
+                {
+                    int id = ammo[j]._itemId;
+                    if (id > 0 && ItemDatabaseManager.ItemById(id) != null) ids.Add(id);
+                }
+            }
+            _allAmmo = new int[ids.Count];
+            ids.CopyTo(_allAmmo);
+            return _allAmmo;
+        }
+
+        private static int[] _allAmmo;
+
+        /// <summary>Leaf recipe: top up every kind of ammo to what the player can carry.</summary>
+        private static void FillAll(TheForest.Items.Inventory.PlayerInventory inv, CraftingRecipe recipe)
+        {
+            int kinds = 0, rounds = 0;
+            foreach (int id in AllAmmoIds())
+            {
+                int max = inv.GetMaxAmountOf(id);
+                if (max <= 0) continue;
+                int give = max - inv.AmountOf(id, true, false);
+                if (give <= 0) continue;
+                if (inv.AddItem(id, give, true, false, null)) { kinds++; rounds += give; }
+            }
+            if (kinds == 0)
+            {
+                Refund(inv, recipe);
+                Show("กระสุนทุกชนิดเต็มอยู่แล้ว คืนวัตถุดิบให้แล้ว");
+                return;
+            }
+            Show($"เติมกระสุนจนเต็ม {kinds} ชนิด (+{rounds} นัด)");
         }
 
         private static void Refund(TheForest.Items.Inventory.PlayerInventory inv, CraftingRecipe recipe)

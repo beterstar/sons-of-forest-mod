@@ -15,7 +15,8 @@ namespace SniperRifle
         public int AmmoRockInput = 1;          // ก้อนหิน (ก้อนใหญ่) กี่ก้อน
         public int AmmoRockOutput = 1000;        // ได้กระสุน 9 มม. กี่นัด (0 = ปิดสูตรนี้)
         public int AmmoLeafInput = 3;          // ใบไม้กี่ใบ
-        public int AmmoLeafOutput = 1000;        // ได้กระสุน 9 มม. กี่นัด (0 = ปิดสูตรนี้)
+        public int AmmoLeafOutput = 1000;      // ได้กระสุน 9 มม. กี่นัด (0 = ปิดสูตรนี้)
+        public bool AmmoLeafFillsAll = true;   // ใบไม้: เติมกระสุนทุกชนิดจนเต็ม (false = เฉพาะ 9 มม.)
         public float ScopeFov = 12f;           // องศา ยิ่งน้อยยิ่งซูมไกล (ปกติเกมประมาณ 70)
         public float ScopeNearClip = 1.2f;     // ซ่อนแขน/ตัวปืนที่อยู่ใกล้กล้องตอนส่อง
         public bool ScopeAimCorrection = true; // ส่องกล้องแล้วกระสุนไปตรงกลางเป้า (ชดเชยกระสุนตก)
@@ -48,6 +49,7 @@ namespace SniperRifle
                     case "ammorockinput": cfg.AmmoRockInput = Mathf.Clamp(v.GetInt32(), 0, 20); break;
                     case "ammorockoutput": cfg.AmmoRockOutput = Mathf.Clamp(v.GetInt32(), 0, 10000); break;
                     case "ammoleafinput": cfg.AmmoLeafInput = Mathf.Clamp(v.GetInt32(), 0, 20); break;
+                    case "ammoleaffillsall": cfg.AmmoLeafFillsAll = v.GetBoolean(); break;
                     case "ammoleafoutput": cfg.AmmoLeafOutput = Mathf.Clamp(v.GetInt32(), 0, 10000); break;
                     case "scopefov": cfg.ScopeFov = Mathf.Clamp((float)v.GetDouble(), 2f, 60f); break;
                     case "scopenearclip": cfg.ScopeNearClip = Mathf.Clamp((float)v.GetDouble(), 0.01f, 5f); break;

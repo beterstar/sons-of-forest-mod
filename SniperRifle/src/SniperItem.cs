@@ -273,7 +273,7 @@ namespace SniperRifle
                     $"ก้อนหิน x{cfg.AmmoRockInput} -> กระสุน 9 มม. x{cfg.AmmoRockOutput}");
             if (cfg.AmmoLeafInput > 0 && cfg.AmmoLeafOutput > 0)
                 AddRecipe(crafting, LeafAmmoRecipeName, 362, new[] { (LeafId, cfg.AmmoLeafInput) }, PistolAmmoId, 1,
-                    $"ใบไม้ x{cfg.AmmoLeafInput} -> กระสุน 9 มม. x{cfg.AmmoLeafOutput}");
+                    cfg.AmmoLeafFillsAll ? $"ใบไม้ x{cfg.AmmoLeafInput} -> กระสุนทุกชนิดจนเต็ม" : $"ใบไม้ x{cfg.AmmoLeafInput} -> กระสุน 9 มม. x{cfg.AmmoLeafOutput}");
         }
 
         private static void AddRecipe(CraftingSystem crafting, string name, int templateResultId, (int id, int count)[] inputs, int resultId, int resultCount, string description)

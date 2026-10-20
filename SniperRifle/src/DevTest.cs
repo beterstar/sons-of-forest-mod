@@ -152,6 +152,7 @@ namespace SniperRifle
                     Log($"REAL mat 3 leaves: {PutOnMat(inv, (SniperItem.LeafId, 3))}");
                     _ammoBefore = inv.AmountOf(SniperItem.PistolAmmoId, true, false);
                     Log($"9mm max carry = {inv.GetMaxAmountOf(SniperItem.PistolAmmoId)}, have {_ammoBefore}");
+                    Log("ammo before: " + AmmoList(inv));
                     Log($"REAL combine leaves: {_cs.TryCombineIngredients()}");
                     Next(8f);
                     return;
@@ -165,6 +166,7 @@ namespace SniperRifle
                     return;
                 case 19:
                     Log($"REAL after leaf craft+stash: 9mm {_ammoBefore} -> {inv.AmountOf(SniperItem.PistolAmmoId, true, false)}");
+                    Log("ammo after: " + AmmoList(inv));
                     _cs.StashAllIngredients();
                     if (AmmoOnly) { _step = 40; _at = Time.unscaledTime + 1f; return; }
                     _group = SonsSdk.ItemTools.GetInventoryLayoutItemGroup(SniperItem.Id);
@@ -356,6 +358,17 @@ namespace SniperRifle
                 cs.RefreshAvailableRecipes(false);
             }
             return result;
+        }
+
+        private static string AmmoList(TheForest.Items.Inventory.PlayerInventory inv)
+        {
+            var sb = new StringBuilder();
+            foreach (int id in CraftBonus.AllAmmoIds())
+            {
+                var d = Sons.Items.Core.ItemDatabaseManager.ItemById(id);
+                sb.Append($" {id}:{d?._name}={inv.AmountOf(id, true, false)}/{inv.GetMaxAmountOf(id)}");
+            }
+            return sb.ToString();
         }
 
         private static string Safe(Func<string> f) { try { return f(); } catch (Exception e) { return "ERR " + e.GetType().Name; } }
