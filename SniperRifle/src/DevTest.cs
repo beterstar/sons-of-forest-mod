@@ -247,7 +247,7 @@ namespace SniperRifle
                     _step = 42; _at = Time.unscaledTime + 2f;
                     return;
                 case 42:
-                    Log($"REAL after rock craft+stash: 9mm {_ammoBefore} -> {inv.AmountOf(SniperItem.PistolAmmoId, true, false)} (max {inv.GetMaxAmountOf(SniperItem.PistolAmmoId)})");
+                    Log($"REAL after rock craft+stash: 9mm {_ammoBefore} -> {inv.AmountOf(SniperItem.PistolAmmoId, true, false)} (max {inv.GetMaxAmountOf(SniperItem.PistolAmmoId)}); rocks in inventory now {inv.AmountOf(SniperItem.RockId, true, false)} (1 = given back)");
                     Shot("ammo_crafted.png");
                     _step = 43; _at = Time.unscaledTime + 0.5f;
                     return;

@@ -15,9 +15,9 @@
   //   ก้อนหิน (ก้อนใหญ่ที่ใช้สร้างฐาน) x ammoRockInput  -> กระสุน x ammoRockOutput
   //   ใบไม้ x ammoLeafInput                              -> กระสุน x ammoLeafOutput
   "ammoRockInput": 1,
-  "ammoRockOutput": 20,
+  "ammoRockOutput": 1000,
   "ammoLeafInput": 3,
-  "ammoLeafOutput": 20,
+  "ammoLeafOutput": 1000,
 
   // มุมกล้องตอนส่อง (องศา) ยิ่งน้อยยิ่งซูมไกล: 20 = ซูม ~3.5 เท่า, 12 = ~6 เท่า, 6 = ~12 เท่า
   "scopeFov": 12,
