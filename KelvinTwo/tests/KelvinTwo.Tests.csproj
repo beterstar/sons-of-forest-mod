@@ -19,6 +19,7 @@
   <ItemGroup>
     <Compile Include="..\src\ModConfig.cs" Link="src\ModConfig.cs" />
     <Compile Include="..\src\CloneStore.cs" Link="src\CloneStore.cs" />
+    <Compile Include="..\src\WarpDecider.cs" Link="src\WarpDecider.cs" />
     <Reference Include="$(GamePath)\_Redloader\net6\RedLoader.dll" />
     <None Include="..\config.json" Link="config.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

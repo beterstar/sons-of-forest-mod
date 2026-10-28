@@ -11,9 +11,12 @@ internal sealed class ModConfig
     public string CloneName = "Kelvin 2";
     public float[] TintRgb = { 0.35f, 0.65f, 1.0f };
     public bool ShowNameTag = true;
-    public float SpeedMultiplier = 1.6f;
+    public float SpeedMultiplier = 1.0f;
     public float VisionMultiplier = 2.0f;
-    public float SearchMultiplier = 3.0f;
+    public float SearchMultiplier = 5.0f;
+    public bool WarpHome = true;
+    public float WarpMinDistance = 60f;
+    public float WarpCooldownSeconds = 60f;
     public float Sentiment = 100f;
     public bool AlwaysObedient = true;
     public bool GliderAutoPickup = true;
@@ -43,6 +46,9 @@ internal sealed class ModConfig
                 case "speedmultiplier": cfg.SpeedMultiplier = Math.Clamp((float)v.GetDouble(), 0.5f, 3f); break;
                 case "visionmultiplier": cfg.VisionMultiplier = Math.Clamp((float)v.GetDouble(), 1f, 5f); break;
                 case "searchmultiplier": cfg.SearchMultiplier = Math.Clamp((float)v.GetDouble(), 1f, 10f); break;
+                case "warphome": cfg.WarpHome = v.GetBoolean(); break;
+                case "warpmindistance": cfg.WarpMinDistance = Math.Clamp((float)v.GetDouble(), 30f, 500f); break;
+                case "warpcooldownseconds": cfg.WarpCooldownSeconds = Math.Clamp((float)v.GetDouble(), 20f, 600f); break;
                 case "sentiment": cfg.Sentiment = Math.Clamp((float)v.GetDouble(), -100f, 100f); break;
                 case "alwaysobedient": cfg.AlwaysObedient = v.GetBoolean(); break;
                 case "gliderautopickup": cfg.GliderAutoPickup = v.GetBoolean(); break;

@@ -27,6 +27,7 @@ internal sealed class CloneManager
     private readonly CloneStore _store;
     private readonly CloneMarker _marker;
     private readonly CloneNetEvent _net;
+    private readonly CloneWarp _warp;
 
     private string _saveKey;
     private int _cloneSimId = -1;
@@ -46,6 +47,7 @@ internal sealed class CloneManager
         _store = store;
         _marker = marker;
         _net = new CloneNetEvent(OnCloneAnnounced);
+        _warp = new CloneWarp(cfg);
     }
 
     internal CloneNetEvent NetEvent => _net;
@@ -59,6 +61,7 @@ internal sealed class CloneManager
         _firstSample = null;
         _idsBeforeSpawn = null;
         _hasClientClone = false;
+        _warp.Reset();
         _marker.Clear();
     }
 
@@ -161,6 +164,11 @@ internal sealed class CloneManager
             if (sim != null) KelvinTools.RefillStats(sim._statsManager);
         });
         if (_cfg.AlwaysObedient) Safe("trust", () => KelvinTools.PinPlayerTrust(_cloneSimId));
+        Safe("warp home", () =>
+        {
+            if (_marker.TryGetLiveClone(out var actor, out var robby)) _warp.Tick(actor, robby);
+            else _warp.Reset();
+        });
 
         if (BoltNetwork.isRunning && bodies is { Count: > 0 } && Time.unscaledTime >= _nextBroadcast)
         {

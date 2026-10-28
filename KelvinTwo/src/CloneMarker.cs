@@ -83,7 +83,8 @@ internal sealed class CloneMarker
     /// </summary>
     internal void KeepSpeed()
     {
-        if (!KelvinTools.IsHost) return;
+        // At 1x leave the animator entirely to the game (no speed-up is the default now).
+        if (_cfg.SpeedMultiplier == 1f || !KelvinTools.IsHost) return;
         foreach (var m in _marked.Values)
         {
             if (!IsLive(m)) continue;
@@ -93,8 +94,24 @@ internal sealed class CloneMarker
         }
     }
 
-    // Without the Robby component we can't tell when he's with a player, so stay safe at 1x.
-    private static bool NeedsNormalSpeed(Robby robby) =>
+    /// <summary>The clone's current body and its Robby component, if he has one right now.</summary>
+    internal bool TryGetLiveClone(out VailActor actor, out Robby robby)
+    {
+        foreach (var m in _marked.Values)
+        {
+            if (!IsLive(m)) continue;
+            actor = m.Actor;
+            robby = m.Robby;
+            return true;
+        }
+        actor = null;
+        robby = null;
+        return false;
+    }
+
+    // True while he's busy with a player (pad, note, help-up). Without the Robby component
+    // we can't tell, so treat that as busy too (no speed-up, no warp).
+    internal static bool NeedsNormalSpeed(Robby robby) =>
         robby == null
         || robby._interactingPlayer != null
         || robby._waitingForOrders
@@ -196,7 +213,7 @@ internal sealed class CloneMarker
         KelvinTools.RefillStats(a);
     }
 
-    private static void Restore(Marked m)
+    private void Restore(Marked m)
     {
         foreach (var (renderer, shared, instances) in m.Originals)
         {
@@ -210,6 +227,6 @@ internal sealed class CloneMarker
         m.Actor._visionPeripheralRange = m.BasePeripheralRange;
         m.Actor._moveSpeedLite = m.BaseMoveSpeedLite;
         m.Actor.SetDamageEnabled(true);
-        if (m.Actor._animator != null) m.Actor._animator.speed = 1f;
+        if (_cfg.SpeedMultiplier != 1f && m.Actor._animator != null) m.Actor._animator.speed = 1f;
     }
 }

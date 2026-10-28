@@ -37,11 +37,13 @@ public sealed class ConfigAndStoreTests : IDisposable
 
         var cfg = ModConfig.Load(shipped);
 
-        Assert.Equal(1.6f, cfg.SpeedMultiplier);
+        Assert.Equal(1.0f, cfg.SpeedMultiplier);
+        Assert.True(cfg.WarpHome);
+        Assert.Equal(60f, cfg.WarpMinDistance);
         Assert.Equal(10f, cfg.GliderSearchRadius);
         Assert.Equal(new[] { 0.35f, 0.65f, 1.0f }, cfg.TintRgb);
         Assert.True(cfg.AlwaysObedient);
-        Assert.Equal(3f, cfg.SearchMultiplier);
+        Assert.Equal(5f, cfg.SearchMultiplier);
     }
 
     [Fact]
