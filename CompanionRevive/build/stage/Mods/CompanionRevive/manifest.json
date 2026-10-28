@@ -3,7 +3,7 @@
     "id":  "CompanionRevive",
     "name":  "Companion Revive",
     "author":  "Claude (local build)",
-    "version":  "1.0.0",
+    "version":  "1.0.1",
     "description":  "ชุบชีวิตเวอร์จิเนีย/เคลวินในเซฟที่ตายไปแล้ว (เฉพาะโฮสต์)",
     "gameVersion":  "1.0.0",
     "type":  "Mod",

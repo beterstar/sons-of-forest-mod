@@ -9,7 +9,7 @@ namespace CompanionRevive
     internal sealed class Config
     {
         public bool ReviveVirginia = true;
-        public bool ReviveKelvin = false;
+        public bool ReviveKelvin = true;
         public string[] SaveIds = Array.Empty<string>(); // empty = every save
         public float Sentiment = 0f;                     // starting trust towards the player (-100..100)
 

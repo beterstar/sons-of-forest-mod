@@ -5,7 +5,7 @@
 #>
 param(
     [string]$GamePath = 'E:\SteamLibrary\steamapps\common\Sons Of The Forest',
-    [string]$Version = '1.0.0',
+    [string]$Version = '1.0.1',
     [switch]$Dev
 )
 $ErrorActionPreference = 'Stop'
