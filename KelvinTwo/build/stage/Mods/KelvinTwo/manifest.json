@@ -1,0 +1,11 @@
+{
+    "$schema":  "https://raw.githubusercontent.com/ToniMacaroni/RedLoader/main/MetadataSchema.json",
+    "id":  "KelvinTwo",
+    "name":  "Kelvin Two",
+    "author":  "Claude (local build)",
+    "version":  "1.0.0",
+    "description":  "เคลวินตัวที่ 2 (อมตะ เดินไว ไม่หลับ ตีแล้วไม่งอน) + เก็บเครื่องร่อนอัตโนมัติหลังลงพื้น",
+    "gameVersion":  "1.0.0",
+    "type":  "Mod",
+    "url":  ""
+}

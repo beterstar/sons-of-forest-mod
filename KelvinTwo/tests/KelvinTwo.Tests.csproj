@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Offline tests for the parts that run without the game. The classes under test are
+       compiled from ..\src directly (build.ps1's dll targets RedLoader's own runtime). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <GamePath Condition="'$(GamePath)' == '' And Exists('E:\SteamLibrary\steamapps\common\Sons Of The Forest')">E:\SteamLibrary\steamapps\common\Sons Of The Forest</GamePath>
+    <GamePath Condition="'$(GamePath)' == ''">F:\SteamLibrary\steamapps\common\Sons Of The Forest</GamePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\src\ModConfig.cs" Link="src\ModConfig.cs" />
+    <Compile Include="..\src\CloneStore.cs" Link="src\CloneStore.cs" />
+    <Reference Include="$(GamePath)\_Redloader\net6\RedLoader.dll" />
+    <None Include="..\config.json" Link="config.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
