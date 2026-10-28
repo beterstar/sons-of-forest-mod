@@ -280,7 +280,7 @@
                                 },
                   "companion":  {
                                     "backup":  null,
-                                    "sha256":  "03324ef5092e25222ade7c4fea553dfc931e074e00f5297637ee7a0cbdc66545",
+                                    "sha256":  "2b243595f204afaca4d93b834733d480f3d5c4e80e6ffd91a2ccf1580bbc725a",
                                     "name":  "ชุบชีวิตเวอร์จิเนีย/เคลวิน (เซฟที่ตายไปแล้ว)",
                                     "files":  [
                                                   "Mods\\CompanionRevive.dll",
@@ -288,7 +288,7 @@
                                                   "Mods\\CompanionRevive\\manifest.json",
                                                   "Mods\\CompanionRevive\\README-TH.txt"
                                               ],
-                                    "installedAt":  "2026-10-17T11:51:07"
+                                    "installedAt":  "2026-10-27T15:09:33"
                                 },
                   "skipintro":  {
                                     "backup":  null,
@@ -298,7 +298,7 @@
                                                   "Mods\\SkipIntroCutscene.dll",
                                                   "Mods\\SkipIntroCutscene\\manifest.json"
                                               ],
-                                    "installedAt":  "2026-10-20T10:49:59"
+                                    "installedAt":  "2026-10-20T16:01:15"
                                 },
                   "thai":  {
                                "backup":  null,
@@ -322,7 +322,27 @@
                                                "Mods\\KelvinCanAttack\\manifest.json"
                                            ],
                                  "installedAt":  "2026-10-12T17:31:14"
-                             }
+                             },
+                  "restless":  {
+                                   "backup":  null,
+                                   "sha256":  "65f794c44d84ac709d8698d141c31d8aba1a16fee6f29d809003874bef370e3a",
+                                   "name":  "Kelvin ทำงานไม่หยุดพัก",
+                                   "files":  [
+                                                 "Mods\\RestlessKelvin\\manifest.json",
+                                                 "Mods\\RestlessKelvin.dll"
+                                             ],
+                                   "installedAt":  "2026-10-27T14:57:38"
+                               },
+                  "unstuck":  {
+                                  "backup":  null,
+                                  "sha256":  "c7c7c3fcf9468da980988b030e17b0c930bc0b5981e56a7f8d801ddd21bb4e19",
+                                  "name":  "ช่วย Kelvin / Virginia ออกจากจุดที่ติด",
+                                  "files":  [
+                                                "Mods\\UnstuckBuddy.dll",
+                                                "Mods\\UnstuckBuddy\\manifest.json"
+                                            ],
+                                  "installedAt":  "2026-10-27T14:57:53"
+                              }
               },
     "settings":  {
                      "kelvinHp":  1000

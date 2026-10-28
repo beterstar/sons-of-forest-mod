@@ -36,13 +36,22 @@ namespace CompanionRevive
             try { _cfg = Config.Load(Path.Combine(_dir, "config.json")); }
             catch (Exception e) { RLog.Error("[CompanionRevive] config.json อ่านไม่ได้: " + e.Message); }
             _test = File.Exists(Path.Combine(_dir, "test.flag"));
+            string slotFlag = Path.Combine(_dir, "savetest.flag");
+            if (File.Exists(slotFlag)) uint.TryParse(File.ReadAllText(slotFlag).Trim(), out _testSlot);
+        }
+
+        protected override void OnSdkInitialized()
+        {
+            if (_testSlot != 0) _loadAt = Time.unscaledTime + 3f;
         }
 
         protected override void OnGameStart() => _checkAt = Time.unscaledTime + 15f;
 
         private void OnUpdate()
         {
+            if (_loadAt > 0f && Time.unscaledTime >= _loadAt) { _loadAt = -1f; LoadTestSlot(); }
             if (_followUpAt > 0f && Time.unscaledTime >= _followUpAt) { _followUpAt = -1f; TestFollowUp(); }
+            if (_recheckAt > 0f && Time.unscaledTime >= _recheckAt) { _recheckAt = -1f; TestRecheck(); }
             if (_shotAt > 0f && Time.unscaledTime >= _shotAt) { _shotAt = -1f; TestShot(); }
             if (_checkAt < 0f || Time.unscaledTime < _checkAt) return;
             if (LocalPlayer._instance == null || !LocalPlayer.IsInWorld || VailWorldSimulation._instance == null)
@@ -66,9 +75,17 @@ namespace CompanionRevive
             string saveId = id.ToString();
             bool host = !BoltNetwork.isRunning || BoltNetwork.isServer;
             RLog.Msg($"[CompanionRevive] save {saveId} ({Sons.Gameplay.GameSetup.GameSetupManager.GetSaveGameType()}), host={host}, Virginia dead={SaveState.IsVirginiaDead()}, Kelvin dead={SaveState.IsRobbyDead()}");
-            if (!host || !_cfg.AppliesTo(saveId)) return;
+            bool testSlot = _testSlot != 0 && id == _testSlot;
+            if (!host || !(_cfg.AppliesTo(saveId) || testSlot)) return;
             if (_cfg.ReviveVirginia && SaveState.IsVirginiaDead()) Revive(VailActorTypeId.Virginia);
             if (_cfg.ReviveKelvin && SaveState.IsRobbyDead()) Revive(VailActorTypeId.Robby);
+            if (testSlot)
+            {
+                _testLog = new StringBuilder();
+                _testType = VailActorTypeId.Robby;
+                TL($"save test {saveId}: virginiaDead={SaveState.IsVirginiaDead()} kelvinDead={SaveState.IsRobbyDead()}");
+                _followUpAt = Time.unscaledTime + 6f;
+            }
         }
 
         private string Revive(VailActorTypeId type)
@@ -78,8 +95,22 @@ namespace CompanionRevive
             if (virginia) SaveState.SetIsVirginiaDead(false);
             else SaveState.SetIsRobbyDead(false);
 
+            // Virginia's record disappears when she dies, but Kelvin's stays in the world sim as a corpse
+            // (State Dead), which would only ever load as a body. Drop dead records and spawn a fresh one.
             var sim = VailWorldSimulation._instance;
-            var existing = virginia ? sim.FindVirginiaActor() : sim.FindRobbyActor();
+            WorldSimActor existing = null;
+            var dead = new System.Collections.Generic.List<WorldSimActor>();
+            foreach (var a in ActorsOf(type))
+            {
+                RLog.Msg($"[CompanionRevive] {type} actor {a.UniqueId}: state={a.State} dead={a.IsDead()} pos={a._position}");
+                if (a.IsDead()) dead.Add(a);
+                else existing ??= a;
+            }
+            foreach (var a in dead)
+            {
+                sim.RemoveActor(a);
+                RLog.Msg($"[CompanionRevive] removed dead {type} actor {a.UniqueId}");
+            }
             string result;
             if (existing != null)
             {
@@ -98,9 +129,22 @@ namespace CompanionRevive
             return result;
         }
 
+        private static System.Collections.Generic.List<WorldSimActor> ActorsOf(VailActorTypeId type)
+        {
+            var found = new System.Collections.Generic.List<WorldSimActor>();
+            var all = VailWorldSimulation._instance._actors;
+            for (int i = 0; all != null && i < all.Count; i++)
+                if (all[i] != null && all[i].TypeId == type) found.Add(all[i]);
+            return found;
+        }
+
         // ---------------------------------------------------------------- dev self-test (Mods\CompanionRevive\test.flag)
 
         private float _followUpAt = -1f;
+        private float _recheckAt = -1f;
+        private float _loadAt = -1f;
+        private uint _testSlot;  // Mods\CompanionRevive\savetest.flag = single-player slot (a COPY of a save) to load and revive in
+        private VailActorTypeId _testType = VailActorTypeId.Virginia;
         private StringBuilder _testLog;
 
         private void TL(string s)
@@ -133,22 +177,40 @@ namespace CompanionRevive
             _followUpAt = Time.unscaledTime + 6f;
         }
 
+        /// <summary>Loads the single-player slot named in savetest.flag (a throw-away copy, never a real save).</summary>
+        private void LoadTestSlot()
+        {
+            // (LoadMenu.LoadSlotActivated on the title screen only sets the mode and never starts the load)
+            RLog.Msg($"[CompanionRevive/test] loading test slot {_testSlot}");
+            Sons.Gameplay.GameSetup.GameSetupManager.SetSaveId(_testSlot);
+            Sons.Gameplay.GameSetup.GameSetupManager.SetSaveGameType(Sons.Save.SaveGameType.SinglePlayer);
+            UnityEngine.SceneManagement.SceneManager.LoadScene("SonsMainLoading");
+        }
+
+        private WorldSimActor LogActors(string when)
+        {
+            var me = LocalPlayer.Transform.position;
+            WorldSimActor near = null;
+            foreach (var a in ActorsOf(_testType))
+            {
+                VailActor body = null;
+                try { body = ActorTools.GetVailActor(a); } catch { }
+                TL($"  {when} {_testType} actor {a.UniqueId}: state={a.State} dead={a.IsDead()} dist={Vector3.Distance(a._position, me):0.0} body={(body != null ? $"{body.name} active={body.gameObject.activeInHierarchy} dead={body.IsDead()} hp={body.GetHealth():0}/{body.GetMaxHealth():0}" : "-")}");
+                if (!a.IsDead() && (near == null || Vector3.Distance(a._position, me) < Vector3.Distance(near._position, me))) near = a;
+            }
+            foreach (var b in ActorTools.GetActors(_testType))
+                if (b != null) TL($"  {when} scene body {b.name}: active={b.gameObject.activeInHierarchy} dead={b.IsDead()} dist={Vector3.Distance(b.transform.position, me):0.0}");
+            return near;
+        }
+
         private void TestFollowUp()
         {
             try
             {
-                var sim = VailWorldSimulation._instance;
                 var me = LocalPlayer.Transform.position;
-                WorldSimActor near = null;
-                var list = sim._virginiaActors;
-                for (int i = 0; list != null && i < list.Count; i++)
-                {
-                    var a = list[i];
-                    TL($"  virginia actor {a.UniqueId}: dist={Vector3.Distance(a._position, me):0.0}");
-                    if (near == null || Vector3.Distance(a._position, me) < Vector3.Distance(near._position, me)) near = a;
-                }
+                var near = LogActors("after revive");
                 var va = near != null ? ActorTools.GetVailActor(near) : null;
-                TL($"nearest Virginia: {(near != null ? $"id={near.UniqueId} dist={Vector3.Distance(near._position, me):0.0}" : "none")} spawned body: {(va != null ? $"{va.name} active={va.gameObject.activeInHierarchy} dist={Vector3.Distance(va.transform.position, me):0.0}" : "no")}");
+                TL($"nearest living {_testType}: {(near != null ? $"id={near.UniqueId} dist={Vector3.Distance(near._position, me):0.0}" : "none")} spawned body: {(va != null ? $"{va.name} active={va.gameObject.activeInHierarchy} dist={Vector3.Distance(va.transform.position, me):0.0}" : "no")}");
                 if (va != null)
                 {
                     var cam = LocalPlayer.MainCamTr;
@@ -169,8 +231,21 @@ namespace CompanionRevive
 
         private void TestShot()
         {
-            ScreenCapture.CaptureScreenshot(Path.Combine(_dir, "test_virginia.png"));
+            ScreenCapture.CaptureScreenshot(Path.Combine(_dir, $"test_{_testType}.png".ToLowerInvariant()));
             TL("screenshot taken");
+            if (_testType == VailActorTypeId.Virginia) TL("done");
+            else _recheckAt = Time.unscaledTime + 20f; // make sure he stays alive and the corpse stays gone
+        }
+
+        private void TestRecheck()
+        {
+            try
+            {
+                LogActors("20 s later");
+                TL($"kelvinDead={SaveState.IsRobbyDead()}");
+                ScreenCapture.CaptureScreenshot(Path.Combine(_dir, "test_robby_later.png"));
+            }
+            catch (Exception e) { TL("recheck failed: " + e); }
             TL("done");
         }
     }
