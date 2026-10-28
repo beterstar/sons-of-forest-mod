@@ -10,7 +10,9 @@ internal static class CloneGuards
 
     // Only the host simulates Kelvin. Clients leave hits alone so the game's own
     // network path is untouched; the host decides what actually happens.
-    internal static bool Applies(VailActor actor) => KelvinTools.IsHost && CloneMarker.IsClone(actor);
+    // Called from hooks that run for every AI: the dictionary lookup goes first.
+    internal static bool Applies(VailActor actor) =>
+        !ReferenceEquals(actor, null) && CloneMarker.IsClone(actor) && KelvinTools.IsHost;
 }
 
 /// <summary>Backup for immortality: the clone ignores direct damage calls.</summary>

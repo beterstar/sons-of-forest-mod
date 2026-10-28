@@ -42,6 +42,7 @@ public class KelvinTwoMod : SonsMod
         }
 
         CloneGuards.IgnoreHits = _cfg.AlwaysObedient;
+        SearchWidening.Multiplier = _cfg.CloneEnabled ? _cfg.SearchMultiplier : 1f;
         _marker = new CloneMarker(_cfg);
         _marker.Activate();
         _clones = new CloneManager(_cfg, new CloneStore(Path.Combine(dir, "clones.json")), _marker);

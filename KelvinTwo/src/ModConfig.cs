@@ -13,6 +13,7 @@ internal sealed class ModConfig
     public bool ShowNameTag = true;
     public float SpeedMultiplier = 1.6f;
     public float VisionMultiplier = 2.0f;
+    public float SearchMultiplier = 3.0f;
     public float Sentiment = 100f;
     public bool AlwaysObedient = true;
     public bool GliderAutoPickup = true;
@@ -41,6 +42,7 @@ internal sealed class ModConfig
                 case "shownametag": cfg.ShowNameTag = v.GetBoolean(); break;
                 case "speedmultiplier": cfg.SpeedMultiplier = Math.Clamp((float)v.GetDouble(), 0.5f, 3f); break;
                 case "visionmultiplier": cfg.VisionMultiplier = Math.Clamp((float)v.GetDouble(), 1f, 5f); break;
+                case "searchmultiplier": cfg.SearchMultiplier = Math.Clamp((float)v.GetDouble(), 1f, 10f); break;
                 case "sentiment": cfg.Sentiment = Math.Clamp((float)v.GetDouble(), -100f, 100f); break;
                 case "alwaysobedient": cfg.AlwaysObedient = v.GetBoolean(); break;
                 case "gliderautopickup": cfg.GliderAutoPickup = v.GetBoolean(); break;

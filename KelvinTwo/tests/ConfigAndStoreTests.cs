@@ -41,6 +41,14 @@ public sealed class ConfigAndStoreTests : IDisposable
         Assert.Equal(10f, cfg.GliderSearchRadius);
         Assert.Equal(new[] { 0.35f, 0.65f, 1.0f }, cfg.TintRgb);
         Assert.True(cfg.AlwaysObedient);
+        Assert.Equal(3f, cfg.SearchMultiplier);
+    }
+
+    [Fact]
+    public void Load_ClampsSearchMultiplier()
+    {
+        Assert.Equal(1f, ModConfig.Load(Write("lo.json", "{ \"searchMultiplier\": 0.2 }")).SearchMultiplier);
+        Assert.Equal(10f, ModConfig.Load(Write("hi.json", "{ \"searchMultiplier\": 50 }")).SearchMultiplier);
     }
 
     [Fact]
