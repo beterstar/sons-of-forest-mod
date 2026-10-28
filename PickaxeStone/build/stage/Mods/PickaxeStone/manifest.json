@@ -1,0 +1,11 @@
+{
+    "$schema":  "https://raw.githubusercontent.com/ToniMacaroni/RedLoader/main/MetadataSchema.json",
+    "id":  "PickaxeStone",
+    "name":  "Pickaxe Stone",
+    "author":  "Claude (local build)",
+    "version":  "1.0.0",
+    "description":  "ตีหินธรรมชาติด้วยอีเต้อ ได้หินก้อนใหญ่",
+    "gameVersion":  "1.0.0",
+    "type":  "Mod",
+    "url":  ""
+}

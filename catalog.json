@@ -152,6 +152,30 @@
       ]
     },
     {
+      "id": "pickaxestone",
+      "group": "เครื่องมือ (สร้างในเครื่องนี้)",
+      "default": false,
+      "mp": true,
+      "local": true,
+      "name": "ตีหินด้วยอีเต้อ ได้หินก้อนใหญ่",
+      "mod": "PickaxeStone 1.0.0 (สร้างในเครื่องนี้ ไม่ต้องดาวน์โหลด)",
+      "page": "PickaxeStone",
+      "desc": "ถืออีเต้อตีหินธรรมชาติในแมพ (ก้อนหินใหญ่ หน้าผา ผนังถ้ำ) จะมีหินก้อนใหญ่หล่นออกมาให้เก็บ  ไม่นับพื้นดินและสิ่งก่อสร้างของผู้เล่น  ตั้งค่าที่ Mods\\PickaxeStone\\config.json",
+      "warn": "co-op: คนที่อยากได้ต้องลงเอง (นับเฉพาะการตีของตัวเอง)  ต้องมีอีเต้อ  ยังไม่ได้ทดสอบในเกมจริง",
+      "file": "pickaxe-stone-1.0.0.zip",
+      "sha256": "4ad573ce30dbcaf1dd6fd18bc6b8e93250294d0dd46b6a921614a37240db7146",
+      "size": 9258,
+      "files": [
+        "Mods/PickaxeStone.dll",
+        "Mods/PickaxeStone/README-TH.txt",
+        "Mods/PickaxeStone/config.json",
+        "Mods/PickaxeStone/manifest.json"
+      ],
+      "roots": [
+        "Mods/"
+      ]
+    },
+    {
       "id": "carry",
       "group": "ยก / เก็บของ",
       "default": true,
