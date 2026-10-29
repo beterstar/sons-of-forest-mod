@@ -11,7 +11,7 @@ internal sealed class ModConfig
     public string CloneName = "Kelvin 2";
     public float[] TintRgb = { 0.35f, 0.65f, 1.0f };
     public bool ShowNameTag = true;
-    public float SpeedMultiplier = 1.0f;
+    public float SpeedMultiplier = 1.6f;
     public float VisionMultiplier = 2.0f;
     public float SearchMultiplier = 5.0f;
     public bool WarpHome = true;
