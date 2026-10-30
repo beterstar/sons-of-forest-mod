@@ -1,3 +1,4 @@
+using System;
 using RedLoader;
 using Sons.Ai.Vail;
 using Sons.Gameplay;
@@ -11,14 +12,22 @@ namespace KelvinTwo;
 /// speeding him up, which looks odd). He then walks the last bit and drops it the normal
 /// way. <see cref="WarpDecider"/> keeps it fair: only while heading back, only when far,
 /// with a cooldown. If no safe landing spot is found he simply keeps walking.
+/// Also watches for him freezing with a load (<see cref="StuckDetector"/>) and tells the AI
+/// he is stuck when that happens, warp or not.
 /// </summary>
 internal sealed class CloneWarp
 {
     private const float LandShortOfDropOff = 6f;
     private const float MaxSnapDistance = 8f;
+    // He walks only a few meters in the second before the check; a failed warp leaves him 30+ m away.
+    private const float WarpTookTolerance = 10f;
 
     private readonly ModConfig _cfg;
     private readonly WarpDecider _decider;
+    private readonly StuckDetector _stuck = new();
+    private bool _checkWarp;
+    private Vector3 _warpLanding;
+    private bool _warpRefused;
 
     internal CloneWarp(ModConfig cfg)
     {
@@ -26,20 +35,41 @@ internal sealed class CloneWarp
         _decider = new WarpDecider(cfg.WarpMinDistance, cfg.WarpCooldownSeconds);
     }
 
-    internal void Reset() => _decider.Reset();
+    internal void Reset()
+    {
+        _decider.Reset();
+        _stuck.Reset();
+        _checkWarp = false;
+    }
+
+    /// <summary>New world: the game gets another chance to accept a warp.</summary>
+    internal void ResetSession()
+    {
+        Reset();
+        _warpRefused = false;
+    }
 
     internal void Tick(VailActor actor, Robby robby)
     {
-        if (!_cfg.WarpHome || actor == null || robby == null || !actor.gameObject.activeInHierarchy
+        if (actor == null || robby == null || !actor.gameObject.activeInHierarchy
             || CloneMarker.NeedsNormalSpeed(robby) || !TryGetDropOff(robby, out var dropOff))
         {
-            _decider.Reset();
+            Reset();
             return;
         }
 
+        if (_checkWarp) CheckWarpTook(actor);
+
         bool carrying = actor.GetInventoryCountAll() > 0;
         var from = actor.transform.position;
-        if (!_decider.Update(carrying, Vector3.Distance(from, dropOff), Time.time)) return;
+        float distance = Vector3.Distance(from, dropOff);
+        if (_stuck.Update(carrying, distance, from.x, from.z, Time.time))
+        {
+            Unstick(actor);
+            RLog.Msg($"[KelvinTwo] Kelvin 2 stood still with his load {distance:0} m from the drop-off - told him he is stuck");
+        }
+
+        if (!_cfg.WarpHome || _warpRefused || !_decider.Update(carrying, distance, Time.time)) return;
 
         if (!TryFindLanding(from, dropOff, out var landing))
         {
@@ -47,7 +77,22 @@ internal sealed class CloneWarp
             return;
         }
         WarpTo(actor, landing, dropOff);
+        _warpLanding = landing;
+        _checkWarp = true;
+        _stuck.Reset();
         RLog.Msg($"[KelvinTwo] Kelvin 2 warped home with his load: {Vector3.Distance(from, landing):0} m");
+    }
+
+    // One tick after a warp: if the game put him back where he was, stop warping this
+    // session and let him walk (re-planning his route so he doesn't stand there).
+    private void CheckWarpTook(VailActor actor)
+    {
+        _checkWarp = false;
+        float off = Vector3.Distance(actor.transform.position, _warpLanding);
+        if (off <= WarpTookTolerance) return;
+        _warpRefused = true;
+        Unstick(actor);
+        RLog.Msg($"[KelvinTwo] warp home did not take ({off:0} m from the landing spot) - warp home off until you reload, Kelvin 2 walks");
     }
 
     private static bool TryGetDropOff(Robby robby, out Vector3 dropOff)
@@ -81,13 +126,21 @@ internal sealed class CloneWarp
     {
         var face = dropOff - landing;
         face.y = 0f;
-        actor.transform.position = landing;
-        if (face.sqrMagnitude > 0.01f) actor.transform.rotation = Quaternion.LookRotation(face);
+        var rotation = face.sqrMagnitude > 0.01f ? Quaternion.LookRotation(face) : actor.transform.rotation;
 
+        // The actor's own move keeps its internal position in step; setting the transform
+        // alone gets undone by the game on the next frame.
+        actor.SetPositionAndRotation(landing, rotation, false);
         var sim = actor.GetWorldSimActor();
         if (sim != null) sim._position = landing;
 
-        // Drop the old route so he re-plans from here instead of walking back along it.
-        actor.ClearPath();
+        // Plan a fresh route from here (clearing the old one without a new one froze him).
+        try { actor.FindPath(); }
+        catch (Exception) { Unstick(actor); }
     }
+
+    // The game's own reaction to a blocked walk: drop the current step and pick the next
+    // one again (here: carry the load to the drop-off). Without a route, a fresh FindPath
+    // throws, and only a hit used to get him out of it.
+    private static void Unstick(VailActor actor) => actor.InterruptCurrentAction(InterruptReason.MovementStuck);
 }

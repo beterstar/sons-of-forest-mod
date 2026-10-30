@@ -20,6 +20,7 @@
     <Compile Include="..\src\ModConfig.cs" Link="src\ModConfig.cs" />
     <Compile Include="..\src\CloneStore.cs" Link="src\CloneStore.cs" />
     <Compile Include="..\src\WarpDecider.cs" Link="src\WarpDecider.cs" />
+    <Compile Include="..\src\StuckDetector.cs" Link="src\StuckDetector.cs" />
     <Reference Include="$(GamePath)\_Redloader\net6\RedLoader.dll" />
     <None Include="..\config.json" Link="config.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

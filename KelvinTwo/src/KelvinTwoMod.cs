@@ -3,6 +3,7 @@ using System.IO;
 using RedLoader;
 using Sons.Ai.Vail;
 using SonsSdk;
+using SonsSdk.Attributes;
 using SonsSdk.Networking;
 using TheForest.Utils;
 using UnityEngine;
@@ -32,9 +33,10 @@ public class KelvinTwoMod : SonsMod
     protected override void OnInitializeMod()
     {
         var dir = DataPath.Path;
+        var cfgPath = Path.Combine(dir, "config.json");
         try
         {
-            _cfg = ModConfig.Load(Path.Combine(dir, "config.json"));
+            _cfg = ModConfig.Load(cfgPath);
         }
         catch (Exception ex)
         {
@@ -42,6 +44,7 @@ public class KelvinTwoMod : SonsMod
         }
 
         CloneGuards.IgnoreHits = _cfg.AlwaysObedient;
+        DebugHooks.Enabled = _cfg.DebugLog;
         SearchWidening.Multiplier = _cfg.CloneEnabled ? _cfg.SearchMultiplier : 1f;
         _marker = new CloneMarker(_cfg);
         _marker.Activate();
@@ -101,6 +104,8 @@ public class KelvinTwoMod : SonsMod
             else
             {
                 _worldReadyAt = -1f;
+                try { DebugHooks.LogHolderRecipes(); }
+                catch (Exception ex) { RLog.Msg("[KelvinTwo] recipe list: " + ex.Message); }
                 try { _clones.OnWorldReady(); }
                 catch (Exception ex) { RLog.Error("[KelvinTwo] world ready: " + ex); }
             }
@@ -117,6 +122,13 @@ public class KelvinTwoMod : SonsMod
     private void OnGui() => EveryFrame(ref _tagFailed, "name tag", () => _marker?.DrawTags());
 
     private bool _speedFailed, _tagFailed;
+
+    // Test helpers for the F1 console, active only with "debugLog": true.
+    [DebugCommand("k1order")]
+    private void K1Order(string args) => DebugHooks.GiveOrder(false, args);
+
+    [DebugCommand("k2order")]
+    private void K2Order(string args) => DebugHooks.GiveOrder(true, args);
 
     /// <summary>Per-frame work: on the first error, log it and switch that feature off.</summary>
     private static void EveryFrame(ref bool failed, string what, Action action)

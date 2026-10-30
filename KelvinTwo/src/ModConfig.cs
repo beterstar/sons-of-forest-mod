@@ -21,6 +21,7 @@ internal sealed class ModConfig
     public bool AlwaysObedient = true;
     public bool GliderAutoPickup = true;
     public float GliderSearchRadius = 10f;
+    public bool DebugLog = false;
 
     internal static ModConfig Load(string path)
     {
@@ -52,6 +53,7 @@ internal sealed class ModConfig
                 case "sentiment": cfg.Sentiment = Math.Clamp((float)v.GetDouble(), -100f, 100f); break;
                 case "alwaysobedient": cfg.AlwaysObedient = v.GetBoolean(); break;
                 case "gliderautopickup": cfg.GliderAutoPickup = v.GetBoolean(); break;
+                case "debuglog": cfg.DebugLog = v.GetBoolean(); break;
                 case "glidersearchradius": cfg.GliderSearchRadius = Math.Clamp((float)v.GetDouble(), 3f, 100f); break;
             }
         }

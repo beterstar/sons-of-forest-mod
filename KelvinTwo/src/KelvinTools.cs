@@ -70,6 +70,22 @@ internal static class KelvinTools
         return sim != null ? sim.UniqueId : -1;
     }
 
+    /// <summary>True if any player (host or co-op friend) stands within <paramref name="radius"/> of <paramref name="pos"/>.</summary>
+    internal static bool AnyPlayerNear(Vector3 pos, float radius)
+    {
+        float sq = radius * radius;
+        var local = TheForest.Utils.LocalPlayer.Transform;
+        if (local != null && (local.position - pos).sqrMagnitude <= sq) return true;
+
+        var players = PlayerTracker.Instance != null ? PlayerTracker.Instance.AllPlayers : null;
+        for (int i = 0; players != null && i < players.Count; i++)
+        {
+            var p = players[i];
+            if (p != null && (p.transform.position - pos).sqrMagnitude <= sq) return true;
+        }
+        return false;
+    }
+
     internal static BoltEntity Entity(VailActor actor)
     {
         var e = actor.GetComponent<BoltEntity>();

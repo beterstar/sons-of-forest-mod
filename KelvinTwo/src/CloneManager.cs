@@ -22,6 +22,7 @@ internal sealed class CloneManager
     private const float SpawnDistance = 4f;
     private const float ConfirmDelaySeconds = 5f;
     private const int MaxKelvins = 2;
+    private const float StatusSeconds = 5f;
 
     private readonly ModConfig _cfg;
     private readonly CloneStore _store;
@@ -36,7 +37,7 @@ internal sealed class CloneManager
     private float _spawnDeadline = -1f;
     private List<int> _firstSample;
     private float _confirmAt = -1f;
-    private float _nextTick, _nextBroadcast;
+    private float _nextTick, _nextBroadcast, _nextStatus;
     private bool _ready;
     private ulong _clientCloneNetId;
     private bool _hasClientClone;
@@ -61,7 +62,7 @@ internal sealed class CloneManager
         _firstSample = null;
         _idsBeforeSpawn = null;
         _hasClientClone = false;
-        _warp.Reset();
+        _warp.ResetSession();
         _marker.Clear();
     }
 
@@ -164,17 +165,41 @@ internal sealed class CloneManager
             if (sim != null) KelvinTools.RefillStats(sim._statsManager);
         });
         if (_cfg.AlwaysObedient) Safe("trust", () => KelvinTools.PinPlayerTrust(_cloneSimId));
-        Safe("warp home", () =>
+        Safe("warp home / unstick", () =>
         {
             if (_marker.TryGetLiveClone(out var actor, out var robby)) _warp.Tick(actor, robby);
             else _warp.Reset();
         });
+
+        if (_cfg.DebugLog && Time.unscaledTime >= _nextStatus)
+        {
+            _nextStatus = Time.unscaledTime + StatusSeconds;
+            Safe("status", LogStatus);
+        }
 
         if (BoltNetwork.isRunning && bodies is { Count: > 0 } && Time.unscaledTime >= _nextBroadcast)
         {
             _nextBroadcast = Time.unscaledTime + BroadcastSeconds;
             Safe("broadcast", () => _net.Broadcast(KelvinTools.Entity(bodies[0])));
         }
+    }
+
+    /// <summary>debugLog: one line every few seconds describing what Kelvin 2 is doing.</summary>
+    private void LogStatus()
+    {
+        var sim = KelvinTools.WorldKelvins(VailWorldSimulation._instance).FirstOrDefault(k => k.UniqueId == _cloneSimId);
+        string where = sim != null ? $"{Vector3.Distance(sim._position, LocalPlayer.Transform.position):0} m from you" : "not in world sim";
+        if (!_marker.TryGetLiveClone(out var actor, out var robby))
+        {
+            RLog.Msg($"[KelvinTwo] status: clone {_cloneSimId} off-screen, {where}");
+            return;
+        }
+        var anim = actor._animator;
+        var order = robby != null && robby._activeOrder != null ? robby._activeOrder._order : null;
+        string pad = robby != null ? $"order={(order != null ? order.GetIl2CppType().Name : "none")} pad={robby._localPadState} " +
+                                     $"waiting={robby._waitingForOrders} player={(robby._interactingPlayer != null)}" : "no Robby";
+        RLog.Msg($"[KelvinTwo] status: clone {_cloneSimId} {where}, anim speed {(anim != null ? anim.speed : -1f):0.00}, " +
+                 $"carrying {actor.GetInventoryCountAll()}, {pad}");
     }
 
     private void ResolvePendingSpawn()

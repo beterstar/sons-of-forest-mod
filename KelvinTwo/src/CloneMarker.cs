@@ -24,15 +24,18 @@ internal sealed class CloneMarker
         public readonly List<(Renderer renderer, Il2CppReferenceArray<Material> shared, Il2CppReferenceArray<Material> instances)> Originals = new();
         public float BaseFocusRange, BasePeripheralRange, BaseMoveSpeedLite;
         public bool Buffed;
+        public bool Working;   // refreshed every host tick; the speed-up only applies while true
     }
 
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private static readonly int ColorId = Shader.PropertyToID("_Color");
+    private const float SlowNearPlayerRadius = 5f;
 
     private readonly ModConfig _cfg;
     private readonly Dictionary<IntPtr, Marked> _marked = new();
     private Func<VailActor, bool> _stillClone = _ => false;
     private GUIStyle _tagStyle;
+    private bool _workingFailed;
 
     internal CloneMarker(ModConfig cfg) => _cfg = cfg;
 
@@ -77,9 +80,10 @@ internal sealed class CloneMarker
 
     /// <summary>
     /// Called every Update and LateUpdate so the game's own animator writes don't win.
-    /// While Kelvin is dealing with a player (order pad, handing a note, being helped up)
-    /// he plays animations synced with the player's, so he runs at normal speed then -
-    /// a faster Kelvin there would drift out of sync and could get stuck.
+    /// Faster only while he has a job (see <see cref="IsWorking"/>). While Kelvin is dealing
+    /// with a player (order pad, handing a note, being helped up) he plays animations synced
+    /// with the player's, so he runs at normal speed then - a faster Kelvin there would
+    /// drift out of sync and could get stuck.
     /// </summary>
     internal void KeepSpeed()
     {
@@ -90,7 +94,7 @@ internal sealed class CloneMarker
             if (!IsLive(m)) continue;
             var anim = m.Actor._animator;
             if (anim == null || anim.speed <= 0f) continue;
-            anim.speed = NeedsNormalSpeed(m.Robby) ? 1f : _cfg.SpeedMultiplier;
+            anim.speed = m.Working && !NeedsNormalSpeed(m.Robby) ? _cfg.SpeedMultiplier : 1f;
         }
     }
 
@@ -116,6 +120,18 @@ internal sealed class CloneMarker
         || robby._interactingPlayer != null
         || robby._waitingForOrders
         || robby._localPadState != Robby.PadState.Closed;
+
+    // Working = carrying something, or on a fetch/build/clear/maintain order with nobody
+    // standing next to him. Idle, following or staying he walks at normal speed, so he's
+    // easy to walk up to and talk to.
+    private static bool IsWorking(Marked m)
+    {
+        if (m.Robby == null) return false;
+        if (m.Actor.GetInventoryCountAll() > 0) return true;
+        var order = m.Robby._activeOrder != null ? m.Robby._activeOrder._order : null;
+        if (order == null || order.TryCast<Robby.RobbyStayOrder>() != null) return false;
+        return !KelvinTools.AnyPlayerNear(m.Actor.transform.position, SlowNearPlayerRadius);
+    }
 
     internal void DrawTags()
     {
@@ -209,6 +225,13 @@ internal sealed class CloneMarker
         a._visionFocusRange = m.BaseFocusRange * _cfg.VisionMultiplier;
         a._visionPeripheralRange = m.BasePeripheralRange * _cfg.VisionMultiplier;
         a._moveSpeedLite = m.BaseMoveSpeedLite * _cfg.SpeedMultiplier;
+        try { m.Working = IsWorking(m); }
+        catch (Exception ex)
+        {
+            if (!_workingFailed) RLog.Error("[KelvinTwo] job check failed, Kelvin 2 stays at normal speed: " + ex.Message);
+            _workingFailed = true;
+            m.Working = false;
+        }
         a.SetDamageEnabled(false);
         KelvinTools.RefillStats(a);
     }
